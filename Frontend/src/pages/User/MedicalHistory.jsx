@@ -1,12 +1,14 @@
 import { useState } from "react";
-
 import { FaSearch, FaEye } from "react-icons/fa";
+import api from "../../api/api"; // File API client
 
 const MedicalHistory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
+  const [selectedRecord, setSelectedRecord] = useState(null); // State cho modal
+  const [error, setError] = useState(null); // State cho lỗi API
 
-  // Dữ liệu mẫu
+  // Dữ liệu mẫu (sẽ thay bằng API)
   const medicalRecords = [
     {
       id: 1,
@@ -47,9 +49,30 @@ const MedicalHistory = () => {
     return matchesSearch && matchesFilter;
   });
 
+  // Xem chi tiết bản ghi
+  const handleViewDetails = async (record) => {
+    try {
+      setError(null);
+      // Gọi API để lấy chi tiết (thay thế dữ liệu mẫu)
+      const response = await api.get(`/medical-records/${record.id}`);
+      setSelectedRecord(response.data);
+    } catch (err) {
+      console.error("Lỗi khi lấy chi tiết:", err);
+      setError("Không thể tải chi tiết bản ghi. Vui lòng thử lại.");
+      // Dùng dữ liệu mẫu nếu API lỗi
+      setSelectedRecord(record);
+    }
+  };
+
+  // Đóng modal
+  const closeModal = () => {
+    setSelectedRecord(null);
+    setError(null);
+  };
+
   return (
     <div>
-      <div className="bg-gray-100 py-10">
+      <div className="bg-gray-100 py-10 mt-10">
         <div className="container mx-auto px-4">
           <h1 className="text-3xl font-bold text-center mb-8">
             Lịch sử khám bệnh
@@ -100,7 +123,11 @@ const MedicalHistory = () => {
                       <td className="p-4">{record.diagnosis}</td>
                       <td className="p-4">{record.treatment}</td>
                       <td className="p-4 text-center">
-                        <button className="text-blue-600 hover:text-blue-800">
+                        <button
+                          className="text-blue-600 hover:text-blue-800"
+                          onClick={() => handleViewDetails(record)}
+                          title="Xem chi tiết"
+                        >
                           <FaEye />
                         </button>
                       </td>
@@ -137,7 +164,11 @@ const MedicalHistory = () => {
                       <strong>Phương pháp điều trị:</strong> {record.treatment}
                     </div>
                     <div className="text-center">
-                      <button className="text-blue-600 hover:text-blue-800">
+                      <button
+                        className="text-blue-600 hover:text-blue-800"
+                        onClick={() => handleViewDetails(record)}
+                        title="Xem chi tiết"
+                      >
                         <FaEye />
                       </button>
                     </div>
@@ -150,6 +181,41 @@ const MedicalHistory = () => {
               )}
             </div>
           </div>
+
+          {/* Modal xem chi tiết */}
+          {selectedRecord && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
+                <h2 className="text-2xl font-bold mb-4 text-blue-600">
+                  Chi tiết khám bệnh
+                </h2>
+                {error && <p className="text-red-500 mb-4">{error}</p>}
+                <div className="space-y-2">
+                  <p>
+                    <strong>Ngày khám:</strong> {selectedRecord.date}
+                  </p>
+                  <p>
+                    <strong>Bác sĩ:</strong> {selectedRecord.doctor}
+                  </p>
+                  <p>
+                    <strong>Chẩn đoán:</strong> {selectedRecord.diagnosis}
+                  </p>
+                  <p>
+                    <strong>Phương pháp điều trị:</strong>{" "}
+                    {selectedRecord.treatment}
+                  </p>
+                </div>
+                <div className="mt-6 text-center">
+                  <button
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+                    onClick={closeModal}
+                  >
+                    Đóng
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

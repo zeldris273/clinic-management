@@ -23,6 +23,8 @@ import UserManagement from "./components/admin/UserManagement";
 import ReportDashboard from "./components/reports/ReportDashboard";
 import AuthPage from "./pages/User/AuthPage.jsx";
 
+import MedicalHistory from "./pages/User/MedicalHistory.jsx"
+
 const App = () => {
   return (
     <Routes>
@@ -48,6 +50,8 @@ const App = () => {
         <Route path="customer" element={<FeedbackList />} />
         <Route path="admin" element={<UserManagement />} />
         <Route path="reports" element={<ReportDashboard />} />
+
+        <Route path="/medical-history" element={<MedicalHistory />} />
 
         {/* 404 */}
         <Route path="*" element={<NotFound />} />

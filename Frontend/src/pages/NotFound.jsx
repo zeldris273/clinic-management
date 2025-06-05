@@ -5,7 +5,7 @@ const NotFound = () => {
     
 
       {/* 404 Section */}
-      <div className="container mx-auto py-12 text-center">
+      <div className="container mx-auto py-12 text-center mt-10">
         <h2 className="text-6xl font-bold text-blue-600 mb-4">404</h2>
         <h3 className="text-3xl font-semibold mb-4">Trang Không Tìm Thấy</h3>
         <p className="text-gray-600 mb-8">

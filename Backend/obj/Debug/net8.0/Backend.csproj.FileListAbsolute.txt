@@ -139,3 +139,4 @@ D:\clinic-management\Backend\bin\Debug\net8.0\tr\Microsoft.CodeAnalysis.Workspac
 D:\clinic-management\Backend\bin\Debug\net8.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\clinic-management\Backend\bin\Debug\net8.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\clinic-management\Backend\bin\Debug\net8.0\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
+D:\clinic-management\Backend\obj\Debug\net8.0\Backend.sourcelink.json

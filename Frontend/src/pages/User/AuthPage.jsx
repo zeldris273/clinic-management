@@ -1,17 +1,23 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser, registerUser } from "../../store/authSlice";
 import api from "../../api/api";
 import Swal from "sweetalert2";
 
-const AuthPage = () => {
-  const [mode, setMode] = useState("login"); 
+export default function AuthPage() {
+  const [mode, setMode] = useState("login");
   const [form, setForm] = useState({
     email: "",
     password: "",
     confirmPassword: "",
     otp: "",
-
   });
-  const [isOtpSent, setIsOtpSent] = useState(false); // Trạng thái OTP đã gửi
+  const [isOtpSent, setIsOtpSent] = useState(false);
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { loading, error } = useSelector((state) => state.auth); // Lấy trạng thái từ Redux
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -24,7 +30,7 @@ const AuthPage = () => {
 
   const handleSendOtp = async () => {
     try {
-      await api.post("api/auth/register", {
+      await api.post("/api/auth/register", {
         email: form.email,
         password: form.password,
       });
@@ -41,7 +47,7 @@ const AuthPage = () => {
       Swal.fire({
         icon: "error",
         title: "Lỗi",
-        text: errorMessage,
+        text: errorMessage.message || errorMessage,
       });
     }
   };
@@ -52,18 +58,16 @@ const AuthPage = () => {
     try {
       if (mode === "login") {
         // Đăng nhập
-        const response = await api.post("api/auth/login", {
-          email: form.email,
-          password: form.password,
-        });
-        localStorage.setItem("accessToken", response.data.accessToken);
+        const result = await dispatch(
+          loginUser({ email: form.email, password: form.password })
+        ).unwrap();
         Swal.fire({
           icon: "success",
           title: "Đăng nhập thành công!",
           showConfirmButton: false,
           timer: 1500,
         });
-        resetForm();
+        navigate("/");
       } else if (mode === "register") {
         // Đăng ký
         if (form.password !== form.confirmPassword) {
@@ -82,11 +86,13 @@ const AuthPage = () => {
           });
           return;
         }
-        await api.post("api/auth/verify-otp", {
-          email: form.email,
-          password: form.password,
-          otp: form.otp,
-        });
+        const result = await dispatch(
+          registerUser({
+            email: form.email,
+            password: form.password,
+            otp: form.otp,
+          })
+        ).unwrap();
         Swal.fire({
           icon: "success",
           title: "Đăng ký thành công!",
@@ -97,7 +103,7 @@ const AuthPage = () => {
         setMode("login");
       } else if (mode === "forgot-password") {
         // Quên mật khẩu
-        await api.post("api/auth/forgot-password", { email: form.email });
+        await api.post("/api/auth/forgot-password", { email: form.email });
         Swal.fire({
           icon: "success",
           title: "OTP đã được gửi!",
@@ -115,7 +121,7 @@ const AuthPage = () => {
           });
           return;
         }
-        await api.post("api/auth/reset-password", {
+        await api.post("/api/auth/reset-password", {
           email: form.email,
           otp: form.otp,
           password: form.password,
@@ -131,7 +137,7 @@ const AuthPage = () => {
       }
     } catch (error) {
       const errorMessage =
-        error.response?.data || error.message || "Đã xảy ra lỗi!";
+        error.message || error || "Đã xảy ra lỗi!";
       Swal.fire({
         icon: "error",
         title: "Lỗi",
@@ -155,6 +161,12 @@ const AuthPage = () => {
           {mode === "reset-password" && "Đặt lại mật khẩu"}
         </h2>
 
+        {error && (
+          <div className="text-red-500 text-center mb-4">
+            {error.message || error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {(mode === "login" ||
             mode === "register" ||
@@ -169,6 +181,7 @@ const AuthPage = () => {
                 onChange={handleChange}
                 required
                 className="w-full border rounded px-3 py-2"
+                disabled={loading}
               />
             </div>
           )}
@@ -183,6 +196,7 @@ const AuthPage = () => {
                 onChange={handleChange}
                 required
                 className="w-full border rounded px-3 py-2"
+                disabled={loading}
               />
             </div>
           )}
@@ -197,6 +211,7 @@ const AuthPage = () => {
                 onChange={handleChange}
                 required
                 className="w-full border rounded px-3 py-2"
+                disabled={loading}
               />
             </div>
           )}
@@ -213,12 +228,14 @@ const AuthPage = () => {
                   required={mode === "reset-password"}
                   placeholder="Nhập OTP từ email"
                   className="w-[70%] border rounded px-3 py-2"
+                  disabled={loading}
                 />
                 {mode === "register" && (
                   <button
                     type="button"
                     onClick={handleSendOtp}
                     className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                    disabled={loading}
                   >
                     Gửi OTP
                   </button>
@@ -229,17 +246,21 @@ const AuthPage = () => {
 
           <button
             type="submit"
-            disabled={mode === "register" && !isOtpSent}
+            disabled={(mode === "register" && !isOtpSent) || loading}
             className={`w-full py-2 rounded text-white transition ${
-              mode === "register" && !isOtpSent
+              (mode === "register" && !isOtpSent) || loading
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-blue-600 hover:bg-blue-700"
             }`}
           >
-            {mode === "login" && "Đăng nhập"}
-            {mode === "register" && "Đăng ký"}
-            {mode === "forgot-password" && "Gửi OTP"}
-            {mode === "reset-password" && "Đặt lại mật khẩu"}
+            {loading ? "Đang xử lý..." : (
+              <>
+                {mode === "login" && "Đăng nhập"}
+                {mode === "register" && "Đăng ký"}
+                {mode === "forgot-password" && "Gửi OTP"}
+                {mode === "reset-password" && "Đặt lại mật khẩu"}
+              </>
+            )}
           </button>
         </form>
 
@@ -288,6 +309,4 @@ const AuthPage = () => {
       </div>
     </div>
   );
-};
-
-export default AuthPage;
+}

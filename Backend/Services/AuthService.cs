@@ -3,128 +3,121 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Npgsql;
 using BCrypt.Net;
 using System.Net.Mail;
 using System.Net;
+using Backend.Data;
+using Microsoft.EntityFrameworkCore;
 using backend.Models;
 
-namespace backend.Services
+namespace Backend.Services
 {
     public class AuthService
     {
+        private readonly ClinicDbContext _context;
         private readonly IConfiguration _config;
-        private readonly string _connectionString;
         private readonly IMemoryCache _cache;
 
-        public AuthService(IConfiguration config, IMemoryCache cache)
+        public AuthService(ClinicDbContext context, IConfiguration config, IMemoryCache cache)
         {
+            _context = context;
             _config = config;
             _cache = cache;
-            _connectionString = _config.GetConnectionString("DefaultConnection");
         }
 
         public async Task<bool> RegisterUser(string email, string password)
         {
-            using var conn = new NpgsqlConnection(_connectionString);
-            await conn.OpenAsync();
-
-            var checkCmd = new NpgsqlCommand("SELECT COUNT(*) FROM Users WHERE \"Email\" = @Email", conn);
-            checkCmd.Parameters.AddWithValue("@Email", email.Trim());
-            var count = Convert.ToInt32(await checkCmd.ExecuteScalarAsync());
-            if (count > 0)
+            var existingUser = await _context.Users.AnyAsync(u => u.Email == email.Trim());
+            if (existingUser)
                 return false;
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
-            var insertCmd = new NpgsqlCommand(
-                "INSERT INTO Users (\"Email\", \"PasswordHash\", \"CreatedAt\") VALUES (@Email, @PasswordHash, @CreatedAt)",
-                conn);
-            insertCmd.Parameters.AddWithValue("@Email", email.Trim());
-            insertCmd.Parameters.AddWithValue("@PasswordHash", passwordHash);
-            insertCmd.Parameters.AddWithValue("@CreatedAt", DateTime.UtcNow);
+            var user = new backend.Models.User
+            {
+                Email = email.Trim(),
+                PasswordHash = passwordHash,
+                Role = UserRole.User, // Giá trị mặc định cho cột NOT NULL
+                CreatedAt = DateTime.UtcNow // Giá trị mặc định cho cột NOT NULL
+            };
 
-            var rowsAffected = await insertCmd.ExecuteNonQueryAsync();
+            _context.Users.Add(user);
+            var rowsAffected = await _context.SaveChangesAsync();
             return rowsAffected > 0;
         }
 
         public async Task<User> ValidateUser(string email, string password)
         {
-            using var conn = new NpgsqlConnection(_connectionString);
-            await conn.OpenAsync();
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == email.Trim());
 
-            var cmd = new NpgsqlCommand("SELECT \"Id\", \"Email\", \"PasswordHash\", \"Role\" FROM Users WHERE \"Email\" = @Email", conn);
-            cmd.Parameters.AddWithValue("@Email", email.Trim());
+            if (user != null && BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+                return user;
 
-            using var reader = await cmd.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
-            {
-                var user = new User
-                {
-                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                    Email = reader.GetString(reader.GetOrdinal("Email")),
-                    PasswordHash = reader.IsDBNull(reader.GetOrdinal("PasswordHash")) ? "" : reader.GetString(reader.GetOrdinal("PasswordHash")),
-                    Role = reader.IsDBNull(reader.GetOrdinal("Role")) ? "User" : reader.GetString(reader.GetOrdinal("Role")),
-                };
-
-                if (BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
-                    return user;
-            }
             return null;
         }
 
         public string GenerateJwtToken(User user)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var jwtKey = _config["Jwt:Key"];
+            if (string.IsNullOrEmpty(jwtKey))
+                throw new InvalidOperationException("JWT Key is not configured in appsettings.json");
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Email),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Role, user.Role.ToString())
             };
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddHours(1), // Access token hết hạn sau 1 giờ
+                expires: DateTime.Now.AddHours(1),
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        // Tạo refresh token dưới dạng JWT
         public string GenerateRefreshToken(User user)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:RefreshKey"]));
+            var refreshKey = _config["Jwt:RefreshKey"];
+            if (string.IsNullOrEmpty(refreshKey))
+                throw new InvalidOperationException("JWT Refresh Key is not configured in appsettings.json");
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(refreshKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.Email),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Role, user.Role.ToString())
             };
 
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddDays(7), // Refresh token hết hạn sau 7 ngày (giảm thời gian sống để tăng bảo mật)
+                expires: DateTime.Now.AddDays(7),
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        // Xác thực refresh token (dạng JWT)
         public User ValidateRefreshToken(string refreshToken)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(_config["Jwt:RefreshKey"]);
+            var refreshKey = _config["Jwt:RefreshKey"];
+            if (string.IsNullOrEmpty(refreshKey))
+                throw new InvalidOperationException("JWT Refresh Key is not configured in appsettings.json");
+
+            var key = Encoding.UTF8.GetBytes(refreshKey);
 
             try
             {
@@ -142,17 +135,19 @@ namespace backend.Services
                 var userIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userIdClaim))
                     return null;
-
+                var roleClaim = principal.FindFirst(ClaimTypes.Role)?.Value;
+                if (!Enum.TryParse<UserRole>(roleClaim, out var role))
+                    role = UserRole.User;
                 return new User
                 {
                     Id = int.Parse(userIdClaim),
                     Email = principal.FindFirst(ClaimTypes.Name)?.Value,
-                    Role = principal.FindFirst(ClaimTypes.Role)?.Value ?? "User"
+                    Role = role
                 };
             }
             catch
             {
-                return null; // Token không hợp lệ hoặc đã hết hạn
+                return null;
             }
         }
 
@@ -201,7 +196,9 @@ namespace backend.Services
             email = email.Trim();
             if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(otp)) return false;
 
-            if (_cache.TryGetValue(email, out (string storedOtp, DateTime expires) stored) && DateTime.UtcNow <= stored.expires && stored.storedOtp == otp)
+            if (_cache.TryGetValue(email, out (string storedOtp, DateTime expires) stored) &&
+                DateTime.UtcNow <= stored.expires &&
+                stored.storedOtp == otp)
             {
                 _cache.Remove(email);
                 return true;
@@ -211,29 +208,17 @@ namespace backend.Services
 
         public async Task<bool> EmailExists(string email)
         {
-            using var conn = new NpgsqlConnection(_connectionString);
-            await conn.OpenAsync();
-
-            var cmd = new NpgsqlCommand("SELECT COUNT(*) FROM \"Users\" WHERE \"Email\" = @Email", conn);
-            cmd.Parameters.AddWithValue("@Email", email.Trim());
-            var count = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-            return count > 0;
+            return await _context.Users.AnyAsync(u => u.Email == email.Trim());
         }
 
-        // Thêm phương thức để đặt lại mật khẩu
         public async Task<bool> ResetPassword(string email, string newPassword)
         {
-            using var conn = new NpgsqlConnection(_connectionString);
-            await conn.OpenAsync();
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email.Trim());
+            if (user == null)
+                return false;
 
-            var passwordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            var cmd = new NpgsqlCommand(
-                "UPDATE \"Users\" SET \"PasswordHash\" = @PasswordHash WHERE \"Email\" = @Email",
-                conn);
-            cmd.Parameters.AddWithValue("@Email", email.Trim());
-            cmd.Parameters.AddWithValue("@PasswordHash", passwordHash);
-
-            var rowsAffected = await cmd.ExecuteNonQueryAsync();
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            var rowsAffected = await _context.SaveChangesAsync();
             return rowsAffected > 0;
         }
     }

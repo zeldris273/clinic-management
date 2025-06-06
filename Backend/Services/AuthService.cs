@@ -8,7 +8,7 @@ using System.Net.Mail;
 using System.Net;
 using Backend.Data;
 using Microsoft.EntityFrameworkCore;
-using backend.Models;
+using Backend.Models;
 
 namespace Backend.Services
 {
@@ -32,7 +32,7 @@ namespace Backend.Services
                 return false;
 
             var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
-            var user = new backend.Models.User
+            var user = new Backend.Models.User
             {
                 Email = email.Trim(),
                 PasswordHash = passwordHash,

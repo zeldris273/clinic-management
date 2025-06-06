@@ -10,7 +10,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<Backend.Services.AuthService>();
-
+builder.Services.AddScoped<Backend.Services.MedicalService>();
+builder.Services.AddScoped<Backend.Services.DoctorService>();
 // CORS
 builder.Services.AddCors(options =>
 {
@@ -26,7 +27,6 @@ builder.Services.AddCors(options =>
 // DbContext
 builder.Services.AddDbContext<ClinicDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 
 
 var app = builder.Build();

@@ -3,6 +3,7 @@ using System;
 using Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     [DbContext(typeof(ClinicDbContext))]
-    partial class ClinicDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250606015526_AddMedicalHistory")]
+    partial class AddMedicalHistory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,55 +24,6 @@ namespace Backend.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("Backend.Models.Doctor", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("Id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Address");
-
-                    b.Property<string>("Contact")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Contact");
-
-                    b.Property<string>("Education")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Education");
-
-                    b.Property<string>("Experience")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Experience");
-
-                    b.Property<string>("Image")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Image");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Name");
-
-                    b.Property<string>("Specialization")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Specialization");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Doctors", (string)null);
-                });
 
             modelBuilder.Entity("Backend.Models.MedicalHistory", b =>
                 {

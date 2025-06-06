@@ -7,6 +7,20 @@ const MedicalHistory = () => {
   const [filter, setFilter] = useState("all");
   const [selectedRecord, setSelectedRecord] = useState(null); // State cho modal
   const [error, setError] = useState(null); // State cho lỗi API
+  const [mediacalRecords, setMediacalRecords] = useState([]);
+
+  useEffect(() => {
+    const fetchMediacalRecords = async () => {
+      try {
+        const response = await api.get("/users/history/{userId}");
+        setMediacalRecords(response.data);
+      } catch (error) {
+        console.error("Error fetching medical records:", error);
+        setError("Failed to load medical records");
+      }
+    };
+    fetchMediacalRecords();
+  }, []);
 
   // Dữ liệu mẫu (sẽ thay bằng API)
   const medicalRecords = [

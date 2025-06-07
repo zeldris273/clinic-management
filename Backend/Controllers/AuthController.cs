@@ -24,7 +24,7 @@ namespace Backend.Controllers
 
             var accessToken = _authService.GenerateJwtToken(user);
             var refreshToken = _authService.GenerateRefreshToken(user);
-
+            var userId = user.Id;
             var cookieOptions = new CookieOptions
             {
                 HttpOnly = true,
@@ -34,8 +34,8 @@ namespace Backend.Controllers
             };
             Response.Cookies.Append("RefreshToken", refreshToken, cookieOptions);
 
-            return Ok(new { AccessToken = accessToken });
-        }
+            return Ok(new { AccessToken = accessToken, UserId = userId });
+        }   
 
         [HttpPost("logout")]
         public IActionResult Logout()

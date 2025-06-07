@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\NEW DESKTOP\\clinic-management\\Backend\\Backend.csproj": {}
+    "D:\\NEW DESKTOP\\clinic-management\\backend\\Backend.csproj": {}
   },
   "projects": {
-    "D:\\NEW DESKTOP\\clinic-management\\Backend\\Backend.csproj": {
+    "D:\\NEW DESKTOP\\clinic-management\\backend\\Backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\NEW DESKTOP\\clinic-management\\Backend\\Backend.csproj",
+        "projectUniqueName": "D:\\NEW DESKTOP\\clinic-management\\backend\\Backend.csproj",
         "projectName": "Backend",
-        "projectPath": "D:\\NEW DESKTOP\\clinic-management\\Backend\\Backend.csproj",
+        "projectPath": "D:\\NEW DESKTOP\\clinic-management\\backend\\Backend.csproj",
         "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "D:\\NEW DESKTOP\\clinic-management\\Backend\\obj\\",
+        "outputPath": "D:\\NEW DESKTOP\\clinic-management\\backend\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

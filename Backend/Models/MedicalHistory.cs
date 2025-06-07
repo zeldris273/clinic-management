@@ -10,8 +10,9 @@ namespace Backend.Models{
         public int UserId { get; set; }
         public DateTime Date { get; set; }
         public int DoctorId { get; set; }
-        public string Prediction { get; set; }
-        public string Method { get; set; }
+        public Doctor Doctor { get; set; }
+        public string Diagnosis { get; set; }
+        public string Treatment { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 

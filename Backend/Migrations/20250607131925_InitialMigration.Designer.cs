@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     [DbContext(typeof(ClinicDbContext))]
-    [Migration("20250606021719_AddDoctor")]
-    partial class AddDoctor
+    [Migration("20250607131925_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -93,25 +93,27 @@ namespace Backend.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("Date");
 
+                    b.Property<string>("Diagnosis")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("Diagnosis");
+
                     b.Property<int>("DoctorId")
                         .HasColumnType("integer")
                         .HasColumnName("DoctorId");
 
-                    b.Property<string>("Method")
+                    b.Property<string>("Treatment")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("Method");
-
-                    b.Property<string>("Prediction")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("Prediction");
+                        .HasColumnName("Treatment");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer")
                         .HasColumnName("UserId");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
 
                     b.ToTable("MedicalHistory", (string)null);
                 });
@@ -151,6 +153,17 @@ namespace Backend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("Backend.Models.MedicalHistory", b =>
+                {
+                    b.HasOne("Backend.Models.Doctor", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
                 });
 #pragma warning restore 612, 618
         }

@@ -32,9 +32,15 @@ namespace Backend.Data
             modelBuilder.Entity<MedicalHistory>().Property(u => u.UserId).HasColumnName("UserId");
             modelBuilder.Entity<MedicalHistory>().Property(u => u.Date).HasColumnName("Date");
             modelBuilder.Entity<MedicalHistory>().Property(u => u.DoctorId).HasColumnName("DoctorId");
-            modelBuilder.Entity<MedicalHistory>().Property(u => u.Prediction).HasColumnName("Prediction");
-            modelBuilder.Entity<MedicalHistory>().Property(u => u.Method).HasColumnName("Method");
+            modelBuilder.Entity<MedicalHistory>().Property(u => u.Diagnosis).HasColumnName("Diagnosis");
+            modelBuilder.Entity<MedicalHistory>().Property(u => u.Treatment).HasColumnName("Treatment");
             modelBuilder.Entity<MedicalHistory>().Property(u => u.CreatedAt).HasColumnName("CreatedAt").HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            modelBuilder.Entity<MedicalHistory>()
+                .HasOne(m => m.Doctor)
+                .WithMany()
+                .HasForeignKey(m => m.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Doctor>().ToTable("Doctors");
             modelBuilder.Entity<Doctor>().Property(u => u.Id).HasColumnName("Id");

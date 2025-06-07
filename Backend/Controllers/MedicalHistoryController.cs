@@ -22,8 +22,10 @@ namespace Backend.Controllers{
         public async Task<IActionResult> GetMedicalHistory(int userId)
         {
             var medicalHistory = await _medicalService.GetMedicalHistoryByUserId(userId);
+            
             if (medicalHistory == null || !medicalHistory.Any())
                 return NotFound("No medical history found for this user");
+
             return Ok(medicalHistory);
         }
 

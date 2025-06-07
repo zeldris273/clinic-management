@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Backend.Data;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.EntityFrameworkCore;
 namespace Backend.Services
 {
     public class MedicalService
@@ -27,6 +27,7 @@ namespace Backend.Services
             {
                 return await _context.MedicalHistories
                     .Where(m => m.UserId == userId)
+                    .Include(m => m.Doctor)
                     .ToListAsync();
             }
             return new List<MedicalHistory>();
@@ -39,8 +40,8 @@ namespace Backend.Services
                 medicalHistory.CreatedAt = DateTime.UtcNow;
                 medicalHistory.Date = DateTime.UtcNow;
                 medicalHistory.DoctorId = medicalHistory.DoctorId;
-                medicalHistory.Prediction = medicalHistory.Prediction;
-                medicalHistory.Method = medicalHistory.Method;
+                medicalHistory.Diagnosis = medicalHistory.Diagnosis;
+                medicalHistory.Treatment = medicalHistory.Treatment;
                 _context.MedicalHistories.Add(medicalHistory);
                 await _context.SaveChangesAsync();
                 return medicalHistory;

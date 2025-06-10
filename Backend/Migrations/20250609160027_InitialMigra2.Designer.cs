@@ -3,6 +3,7 @@ using System;
 using Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     [DbContext(typeof(ClinicDbContext))]
-    partial class ClinicDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250609160027_InitialMigra2")]
+    partial class InitialMigra2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,8 +39,7 @@ namespace Backend.Migrations
                         .HasColumnName("Date");
 
                     b.Property<int>("PatiensId")
-                        .HasColumnType("integer")
-                        .HasColumnName("PatiensId");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -47,6 +49,10 @@ namespace Backend.Migrations
                     b.Property<int>("doctorId")
                         .HasColumnType("integer")
                         .HasColumnName("doctorId");
+
+                    b.Property<int>("patientId")
+                        .HasColumnType("integer")
+                        .HasColumnName("patientId");
 
                     b.HasKey("Id");
 
@@ -149,8 +155,6 @@ namespace Backend.Migrations
                         .HasColumnName("UserId");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DoctorId");
 
                     b.HasIndex("PatiensId");
 
@@ -256,19 +260,11 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Models.MedicalHistory", b =>
                 {
-                    b.HasOne("Backend.Models.Doctor", "Doctor")
-                        .WithMany()
-                        .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Backend.Models.Patiens", null)
                         .WithMany("MedicalHistories")
                         .HasForeignKey("PatiensId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Doctor");
                 });
 
             modelBuilder.Entity("Backend.Models.Patiens", b =>

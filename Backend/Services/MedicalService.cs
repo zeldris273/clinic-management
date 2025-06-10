@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Backend.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Backend.Data;
+using Backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+
 namespace Backend.Services
 {
     public class MedicalService
@@ -23,19 +24,16 @@ namespace Backend.Services
 
         public async Task<List<MedicalHistory>> GetMedicalHistoryByUserId(int userId)
         {
-            if(await _context.Users.AnyAsync(u => u.Id == userId))
+            if (await _context.Users.AnyAsync(u => u.Id == userId))
             {
-                return await _context.MedicalHistories
-                    .Where(m => m.UserId == userId)
-                    .Include(m => m.Doctor)
-                    .ToListAsync();
+                return await _context.MedicalHistories.Where(m => m.UserId == userId).ToListAsync();
             }
             return new List<MedicalHistory>();
         }
 
         public async Task<MedicalHistory> AddMedicalHistory(MedicalHistory medicalHistory)
         {
-            if(await _context.Users.AnyAsync(u => u.Id == medicalHistory.UserId))
+            if (await _context.Users.AnyAsync(u => u.Id == medicalHistory.UserId))
             {
                 medicalHistory.CreatedAt = DateTime.UtcNow;
                 medicalHistory.Date = DateTime.UtcNow;
@@ -55,6 +53,20 @@ namespace Backend.Services
             if (medicalHistory == null)
                 return null;
             _context.MedicalHistories.Remove(medicalHistory);
+            await _context.SaveChangesAsync();
+            return medicalHistory;
+        }
+
+        public async Task<MedicalHistory> UpdateMedicalHistory(MedicalHistory mediacalHIS)
+        {
+            var medicalHistory = await _context.MedicalHistories.FindAsync(mediacalHIS.Id);
+            if (medicalHistory == null)
+                return null;
+            medicalHistory.Date = mediacalHIS.Date;
+            medicalHistory.DoctorId = mediacalHIS.DoctorId;
+            medicalHistory.Diagnosis = mediacalHIS.Diagnosis;
+            medicalHistory.Treatment = mediacalHIS.Treatment;
+            _context.MedicalHistories.Update(medicalHistory);
             await _context.SaveChangesAsync();
             return medicalHistory;
         }

@@ -1,22 +1,26 @@
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Backend.Models;
-using Microsoft.AspNetCore.Mvc;
-using Backend.Services;
+using AutoMapper;
 using Backend.Data;
+using Backend.Models;
+using Backend.Services;
+using Microsoft.AspNetCore.Mvc;
 
-namespace Backend.Controllers{
+namespace Backend.Controllers
+{
     [ApiController]
     [Route("api/[controller]")]
     public class DoctorController : ControllerBase
     {
         private readonly DoctorService _doctorService;
-        public DoctorController(DoctorService doctorService)
+        private readonly IMapper _imapper;
+
+        public DoctorController(DoctorService doctorService, IMapper imapper)
         {
             _doctorService = doctorService;
+            _imapper = imapper;
         }
 
         [HttpGet("all")]
@@ -37,23 +41,33 @@ namespace Backend.Controllers{
             return Ok(doctor);
         }
 
-
         [HttpPost("add")]
-        public async Task<IActionResult> AddDoctor([FromBody] Doctor doctor)
+        public async Task<IActionResult> AddDoctor([FromBody] DoctorCreateDTO doctorCreateDTO)
         {
-            var newDoctor = await _doctorService.AddDoctor(doctor);
+            var newDoctor = await _doctorService.AddDoctor(_imapper.Map<Doctor>(doctorCreateDTO));
             if (newDoctor == null)
                 return BadRequest("Failed to add doctor");
             return Ok(newDoctor);
         }
 
-        [HttpPost("delete/{id}")]
+        [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteDoctor(int id)
         {
             var doctor = await _doctorService.DeleteDoctor(id);
             if (doctor == null)
                 return BadRequest("Failed to delete doctor");
             return Ok("Doctor deleted successfully");
+        }
+
+        [HttpPut("update")]
+        public async Task<IActionResult> UpdateDoctor(DoctorUpdateDTO doctorUpdateDTO)
+        {
+            var updatedDoctor = await _doctorService.UpdateDoctor(
+                _imapper.Map<DoctorUpdateDTO>(doctorUpdateDTO)
+            );
+            if (updatedDoctor == null)
+                return BadRequest("Failed to update doctor");
+            return Ok(updatedDoctor);
         }
     }
 }

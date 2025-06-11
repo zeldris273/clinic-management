@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { FaArrowRight, FaHospital, FaRegUser } from "react-icons/fa";
+import { FaHospital, FaRegUser } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser } from "../../store/authSlice";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,7 +15,23 @@ export default function Navbar() {
   const location = useLocation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, token } = useSelector((state) => state.auth);
+  const { token } = useSelector((state) => state.auth);
+
+  // Lấy email và role từ token
+  let userEmail = "User";
+  let userRole = null;
+  if (token) {
+    try {
+      const decoded = jwtDecode(token);
+      userEmail =
+        decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] ||
+        "User";
+      userRole =
+        decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+    } catch (error) {
+      console.error("Error decoding token:", error);
+    }
+  }
 
   const handleMouseEnter = () => {
     if (window.innerWidth >= 1024) {
@@ -52,8 +69,16 @@ export default function Navbar() {
           Klinik
         </div>
         <div className="md:hidden">
-          <button onClick={() => setIsOpen(!isOpen)} className="focus:outline-none">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="focus:outline-none"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -65,21 +90,44 @@ export default function Navbar() {
         </div>
         <ul
           className={`md:flex md:items-center space-x-4 ${
-            isOpen ? "block flex flex-col items-center space-y-4 mt-4" : "hidden"
+            isOpen
+              ? "block flex flex-col items-center space-y-4 mt-4"
+              : "hidden"
           } md:block md:flex-row md:space-y-0 md:mt-0 transition-all duration-300 ease-in-out`}
         >
           <li>
-            <Link to="/" className={`px-4 py-2 ${location.pathname === "/" ? "text-blue-400" : "hover:text-blue-400"}`}>
+            <Link
+              to="/"
+              className={`px-4 py-2 ${
+                location.pathname === "/"
+                  ? "text-blue-400"
+                  : "hover:text-blue-400"
+              }`}
+            >
               Home
             </Link>
           </li>
           <li>
-            <Link to="/about" className={`px-4 py-2 ${location.pathname === "/about" ? "text-blue-400" : "hover:text-blue-400"}`}>
+            <Link
+              to="/about"
+              className={`px-4 py-2 ${
+                location.pathname === "/about"
+                  ? "text-blue-400"
+                  : "hover:text-blue-400"
+              }`}
+            >
               About
             </Link>
           </li>
           <li>
-            <Link to="/services" className={`px-4 py-2 ${location.pathname === "/services" ? "text-blue-400" : "hover:text-blue-400"}`}>
+            <Link
+              to="/services"
+              className={`px-4 py-2 ${
+                location.pathname === "/services"
+                  ? "text-blue-400"
+                  : "hover:text-blue-400"
+              }`}
+            >
               Services
             </Link>
           </li>
@@ -96,7 +144,9 @@ export default function Navbar() {
                 onClick={toggleUserMenu}
               >
                 <FaRegUser className="w-5 h-5 text-gray-600" />
-                <span className="text-sm text-gray-700 hidden md:inline">{user?.email || "User"}</span>
+                <span className="text-sm text-gray-700 hidden md:inline">
+                  {userEmail}
+                </span>
               </div>
               <div
                 className={`absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-md text-sm text-black z-50 ${
@@ -109,17 +159,17 @@ export default function Navbar() {
                     : "hidden"
                 }`}
               >
-                {user?.role === "Doctor" ? (
+                {userRole === "Doctor" ? (
                   <>
                     <Link
-                      to="/medical-records"
+                      to="/medical-record-list"
                       onClick={() => {
                         setIsUserMenuOpen(false);
                         setIsHovered(false);
                       }}
                       className="block px-4 py-2 hover:bg-gray-100"
                     >
-                      Medical Records
+                      Medical Record List
                     </Link>
                     <button
                       onClick={handleLogout}
@@ -165,7 +215,9 @@ export default function Navbar() {
               <Link
                 to="/auth"
                 className={`flex items-center px-4 py-2 space-x-1 ${
-                  location.pathname === "/auth" ? "text-blue-400" : "hover:text-blue-400"
+                  location.pathname === "/auth"
+                    ? "text-blue-400"
+                    : "hover:text-blue-400"
                 }`}
               >
                 <span>Login</span>

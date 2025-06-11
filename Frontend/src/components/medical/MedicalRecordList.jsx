@@ -1,11 +1,12 @@
+import React, { useState } from 'react';
+
 const MedicalRecordList = () => {
   const [records, setRecords] = useState([
     { id: 1, patient: 'John Doe', doctor: 'Dr. Smith', date: '2025-06-01', diagnosis: 'Flu', supplies: ['Syringe', 'Bandage'] },
-    // Add more sample data
   ]);
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 mt-5">
       <h2 className="text-2xl font-bold mb-4">Medical Records</h2>
       <button className="bg-blue-600 text-white px-4 py-2 rounded mb-4">Add Record</button>
       <table className="w-full border">

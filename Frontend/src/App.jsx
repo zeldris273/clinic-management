@@ -43,7 +43,7 @@ const App = () => {
         {/* Quản lý */}
         <Route path="patients" element={<PatientList />} />
         <Route path="appointments" element={<AppointmentList />} />
-        <Route path="medical" element={<MedicalRecordList />} />
+        <Route path="medical-record-list" element={<MedicalRecordList />} />
         <Route path="inventory" element={<InventoryList />} />
         <Route path="staff" element={<StaffList />} />
         <Route path="finance" element={<FinanceList />} />

@@ -7,26 +7,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Backend.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "Patiens",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    userId = table.Column<int>(type: "integer", nullable: false),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Phone = table.Column<string>(type: "text", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Patiens", x => x.Id);
-                });
-
             migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
@@ -70,6 +55,55 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Patiens",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    userId = table.Column<int>(type: "integer", nullable: false),
+                    Name = table.Column<string>(type: "text", nullable: false),
+                    Phone = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Patiens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Patiens_Users_userId",
+                        column: x => x.userId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Appointments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PatiensId = table.Column<int>(type: "integer", nullable: false),
+                    doctorId = table.Column<int>(type: "integer", nullable: false),
+                    Date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Type = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Appointments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Appointments_Doctors_doctorId",
+                        column: x => x.doctorId,
+                        principalTable: "Doctors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Appointments_Patiens_PatiensId",
+                        column: x => x.PatiensId,
+                        principalTable: "Patiens",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "MedicalHistory",
                 columns: table => new
                 {
@@ -81,7 +115,7 @@ namespace Backend.Migrations
                     PatiensId = table.Column<int>(type: "integer", nullable: false),
                     Diagnosis = table.Column<string>(type: "text", nullable: false),
                     Treatment = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -101,6 +135,16 @@ namespace Backend.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Appointments_doctorId",
+                table: "Appointments",
+                column: "doctorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Appointments_PatiensId",
+                table: "Appointments",
+                column: "PatiensId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Doctors_userId",
                 table: "Doctors",
                 column: "userId");
@@ -114,11 +158,19 @@ namespace Backend.Migrations
                 name: "IX_MedicalHistory_PatiensId",
                 table: "MedicalHistory",
                 column: "PatiensId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Patiens_userId",
+                table: "Patiens",
+                column: "userId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Appointments");
+
             migrationBuilder.DropTable(
                 name: "MedicalHistory");
 

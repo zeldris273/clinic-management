@@ -1,57 +1,75 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FaSearch, FaEye } from "react-icons/fa";
-import api from "../../api/api"; // File API client
+import { useNavigate } from "react-router-dom";
+import api from "../../api/api";
+import { jwtDecode } from "jwt-decode";
+import Swal from "sweetalert2";
 
 const MedicalHistory = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
-  const [selectedRecord, setSelectedRecord] = useState(null); // State cho modal
-  const [error, setError] = useState(null); // State cho lỗi API
-  const [mediacalRecords, setMediacalRecords] = useState([]);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [error, setError] = useState(null);
+  const [medicalRecords, setMedicalRecords] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMediacalRecords = async () => {
+    const fetchMedicalRecords = async () => {
       try {
-        const response = await api.get("/users/history/{userId}");
-        setMediacalRecords(response.data);
+        // Lấy accessToken từ localStorage
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+          Swal.fire({
+            icon: "error",
+            title: "Lỗi",
+            text: "Bạn chưa đăng nhập!",
+          });
+          navigate("/auth");
+          return;
+        }
+
+        // Giải mã token để lấy userId và role
+        const decoded = jwtDecode(token);
+        const userId =
+          decoded[
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+          ];
+        const role =
+          decoded[
+            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+          ];
+
+        
+        if (role !== "User") {
+          Swal.fire({
+            icon: "warning",
+            title: "Không có quyền",
+            text: "Chỉ bác sĩ mới có thể xem lịch sử khám bệnh!",
+          });
+          navigate("/");
+          return;
+        }
+
+        // Gọi API với userId
+        const response = await api.get(
+          `/api/medical-history/users/history/${userId}`
+        );
+        setMedicalRecords(response.data);
       } catch (error) {
         console.error("Error fetching medical records:", error);
-        setError("Failed to load medical records");
+        setError("Không thể tải lịch sử khám bệnh. Vui lòng thử lại.");
       }
     };
-    fetchMediacalRecords();
-  }, []);
-
-  // Dữ liệu mẫu (sẽ thay bằng API)
-  const medicalRecords = [
-    {
-      id: 1,
-      date: "2025-06-01",
-      doctor: "BS. Nguyễn Văn A",
-      diagnosis: "Cảm cúm",
-      treatment: "Uống paracetamol, nghỉ ngơi",
-    },
-    {
-      id: 2,
-      date: "2025-05-28",
-      doctor: "BS. Trần Thị B",
-      diagnosis: "Viêm họng",
-      treatment: "Kháng sinh, súc miệng nước muối",
-    },
-    {
-      id: 3,
-      date: "2025-05-20",
-      doctor: "BS. Lê Văn C",
-      diagnosis: "Đau dạ dày",
-      treatment: "Omeprazole, ăn nhẹ",
-    },
-  ];
+    fetchMedicalRecords();
+  }, [navigate]);
 
   // Lọc và tìm kiếm
   const filteredRecords = medicalRecords.filter((record) => {
     const matchesSearch =
-      record.doctor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.diagnosis.toLowerCase().includes(searchTerm.toLowerCase());
+      record.diagnosis?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      false ||
+      record.treatment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      false;
     const matchesFilter =
       filter === "all" ||
       (filter === "week" &&
@@ -67,13 +85,11 @@ const MedicalHistory = () => {
   const handleViewDetails = async (record) => {
     try {
       setError(null);
-      // Gọi API để lấy chi tiết (thay thế dữ liệu mẫu)
-      const response = await api.get(`/medical-records/${record.id}`);
+      const response = await api.get(`/api/medical-history/${record.id}`);
       setSelectedRecord(response.data);
     } catch (err) {
       console.error("Lỗi khi lấy chi tiết:", err);
       setError("Không thể tải chi tiết bản ghi. Vui lòng thử lại.");
-      // Dùng dữ liệu mẫu nếu API lỗi
       setSelectedRecord(record);
     }
   };
@@ -98,7 +114,7 @@ const MedicalHistory = () => {
               <FaSearch className="text-gray-500 mx-2" />
               <input
                 type="text"
-                placeholder="Tìm theo bác sĩ hoặc chẩn đoán..."
+                placeholder="Tìm theo chẩn đoán hoặc điều trị..."
                 className="w-full p-2 outline-none"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -122,7 +138,7 @@ const MedicalHistory = () => {
               <thead className="bg-blue-600 text-white">
                 <tr>
                   <th className="p-4 text-left">Ngày khám</th>
-                  <th className="p-4 text-left">Bác sĩ</th>
+                  <th className="p-4 text-left">Bác sĩ ID</th>
                   <th className="p-4 text-left">Chẩn đoán</th>
                   <th className="p-4 text-left">Phương pháp điều trị</th>
                   <th className="p-4 text-center">Hành động</th>
@@ -132,8 +148,10 @@ const MedicalHistory = () => {
                 {filteredRecords.length > 0 ? (
                   filteredRecords.map((record) => (
                     <tr key={record.id} className="border-b hover:bg-gray-50">
-                      <td className="p-4">{record.date}</td>
-                      <td className="p-4">{record.doctor}</td>
+                      <td className="p-4">
+                        {new Date(record.date).toLocaleDateString()}
+                      </td>
+                      <td className="p-4">{record.doctorId}</td>
                       <td className="p-4">{record.diagnosis}</td>
                       <td className="p-4">{record.treatment}</td>
                       <td className="p-4 text-center">
@@ -166,10 +184,11 @@ const MedicalHistory = () => {
                     className="border-b p-4 bg-white hover:bg-gray-50"
                   >
                     <div className="mb-2">
-                      <strong>Ngày khám:</strong> {record.date}
+                      <strong>Ngày khám:</strong>{" "}
+                      {new Date(record.date).toLocaleDateString()}
                     </div>
                     <div className="mb-2">
-                      <strong>Bác sĩ:</strong> {record.doctor}
+                      <strong>Bác sĩ ID:</strong> {record.doctorId}
                     </div>
                     <div className="mb-2">
                       <strong>Chẩn đoán:</strong> {record.diagnosis}
@@ -206,10 +225,11 @@ const MedicalHistory = () => {
                 {error && <p className="text-red-500 mb-4">{error}</p>}
                 <div className="space-y-2">
                   <p>
-                    <strong>Ngày khám:</strong> {selectedRecord.date}
+                    <strong>Ngày khám:</strong>{" "}
+                    {new Date(selectedRecord.date).toLocaleDateString()}
                   </p>
                   <p>
-                    <strong>Bác sĩ:</strong> {selectedRecord.doctor}
+                    <strong>Bác sĩ ID:</strong> {selectedRecord.doctorId}
                   </p>
                   <p>
                     <strong>Chẩn đoán:</strong> {selectedRecord.diagnosis}

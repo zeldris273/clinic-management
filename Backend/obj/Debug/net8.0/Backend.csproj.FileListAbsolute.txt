@@ -287,3 +287,5 @@ D:\NEW DESKTOP\clinic-management\Backend\obj\Debug\net8.0\Backend.genruntimeconf
 D:\NEW DESKTOP\clinic-management\Backend\obj\Debug\net8.0\ref\Backend.dll
 D:\NEW DESKTOP\clinic-management\Backend\bin\Debug\net8.0\AutoMapper.dll
 D:\NEW DESKTOP\clinic-management\Backend\bin\Debug\net8.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
+D:\clinic-management\Backend\bin\Debug\net8.0\AutoMapper.dll
+D:\clinic-management\Backend\bin\Debug\net8.0\AutoMapper.Extensions.Microsoft.DependencyInjection.dll
